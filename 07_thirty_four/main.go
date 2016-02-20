@@ -101,90 +101,89 @@ func computeValidRows() orderedValidRows {
 func main() {
 	validRows := computeValidRows()
 
-	// for _, r := range validRows {
-	//  fmt.Println(r)
-	// }
-	// return
-
-	// fmt.Println(len(validRows))
-
 	var validSquares []square
-
-	var l0, l1, l2 int64
+	resultsChan := make(chan square)
+	doneChan := make(chan struct{})
 
 	for _, r0 := range validRows {
-		l0++
-		usedBits := r0.bits
+		go work(resultsChan, doneChan, validRows, r0)
+	}
 
-		for _, r1 := range validRows {
-			l1++
-
-			if r1.bits&usedBits != 0 {
-				continue
-			}
-
-			usedBits := usedBits | r1.bits
-
-			c0ValidRows := validRows.filterPrefix2(r0.values[0], r1.values[0])
-			c0r2Min := c0ValidRows[0].values[2]
-			c0r2Max := c0ValidRows[len(c0ValidRows)-1].values[2]
-
-			for i := c0r2Min; i <= c0r2Max; i++ {
-				for _, r2 := range validRows.filterPrefix1(i) {
-					l2++
-					if r2.bits&usedBits != 0 {
-						continue
-					}
-
-					usedBits := usedBits | r2.bits
-
-					// Compute final row, and ensure that all values are between 1 and 16
-					x := 34 - r0.values[0] - r1.values[0] - r2.values[0]
-					if x < 1 || 16 < x {
-						continue
-					}
-					y := 34 - r0.values[1] - r1.values[1] - r2.values[1]
-					if y < 1 || 16 < y {
-						continue
-					}
-					z := 34 - r0.values[2] - r1.values[2] - r2.values[2]
-					if z < 1 || 16 < z {
-						continue
-					}
-					w := 34 - r0.values[3] - r1.values[3] - r2.values[3]
-					if w < 1 || 16 < w {
-						continue
-					}
-
-					r3 := newRow(x, y, z, w)
-
-					if r3.bits|usedBits == allBitsUsed && // check that all bits are used -- this will find collisions in last calculated row with itself as well as any of the other rows
-						// rows 0, 1, and 2 are guaranteed to == 34 because we pulled them from the list
-						// of known good rows
-						r3.values[0]+r3.values[1]+r3.values[2]+r3.values[3] == 34 && // row 4 was computed so must check
-						// All columns are correct because it was computed
-						r0.values[0]+r1.values[1]+r2.values[2]+r3.values[3] == 34 && // diagonal 1
-						r0.values[3]+r1.values[2]+r2.values[1]+r3.values[0] == 34 { // diagonal 2
-						validSquares = append(validSquares, square{r0, r1, r2, r3})
-						// fmt.Printf("%v\n\n", square{r0, r1, r2, r3})
-					}
-				}
-			}
-
+	for waitCount := len(validRows); waitCount != 0; {
+		select {
+		case s := <-resultsChan:
+			validSquares = append(validSquares, s)
+			// fmt.Printf("%v\n\n", s)
+		case <-doneChan:
+			waitCount--
 		}
 	}
 
-	fmt.Println("l0:", l0)
-	fmt.Println("l1:", l1)
-	fmt.Println("l2:", l2)
 	fmt.Println("Magic squares:", len(validSquares))
 }
 
-// l0: 2064
-// l1: 4260096
-// l2: 1684010304
+func work(resultsChan chan square, doneChan chan struct{}, validRows orderedValidRows, r0 row) {
+	usedBits := r0.bits
+
+	for _, r1 := range validRows {
+		if r1.bits&usedBits != 0 {
+			continue
+		}
+
+		usedBits := usedBits | r1.bits
+
+		c0ValidRows := validRows.filterPrefix2(r0.values[0], r1.values[0])
+		c0r2Min := c0ValidRows[0].values[2]
+		c0r2Max := c0ValidRows[len(c0ValidRows)-1].values[2]
+
+		for i := c0r2Min; i <= c0r2Max; i++ {
+			for _, r2 := range validRows.filterPrefix1(i) {
+				if r2.bits&usedBits != 0 {
+					continue
+				}
+
+				usedBits := usedBits | r2.bits
+
+				// Compute final row, and ensure that all values are between 1 and 16
+				x := 34 - r0.values[0] - r1.values[0] - r2.values[0]
+				if x < 1 || 16 < x {
+					continue
+				}
+				y := 34 - r0.values[1] - r1.values[1] - r2.values[1]
+				if y < 1 || 16 < y {
+					continue
+				}
+				z := 34 - r0.values[2] - r1.values[2] - r2.values[2]
+				if z < 1 || 16 < z {
+					continue
+				}
+				w := 34 - r0.values[3] - r1.values[3] - r2.values[3]
+				if w < 1 || 16 < w {
+					continue
+				}
+
+				r3 := newRow(x, y, z, w)
+
+				if r3.bits|usedBits == allBitsUsed && // check that all bits are used -- this will find collisions in last calculated row with itself as well as any of the other rows
+					// rows 0, 1, and 2 are guaranteed to == 34 because we pulled them from the list
+					// of known good rows
+					r3.values[0]+r3.values[1]+r3.values[2]+r3.values[3] == 34 && // row 4 was computed so must check
+					// All columns are correct because it was computed
+					r0.values[0]+r1.values[1]+r2.values[2]+r3.values[3] == 34 && // diagonal 1
+					r0.values[3]+r1.values[2]+r2.values[1]+r3.values[0] == 34 { // diagonal 2
+					resultsChan <- square{r0, r1, r2, r3}
+				}
+			}
+		}
+
+	}
+
+	doneChan <- struct{}{}
+
+}
+
 // Magic squares: 7040
 
-// real	0m10.817s
-// user	0m10.868s
-// sys	0m0.043s
+// real	0m2.316s
+// user	0m16.684s
+// sys	0m0.024s
