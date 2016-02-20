@@ -7,7 +7,6 @@ package main
 
 import (
 	"fmt"
-	"sort"
 )
 
 type row struct {
@@ -35,6 +34,8 @@ func (s square) String() string {
 		s[3].values[0], s[3].values[1], s[3].values[2], s[3].values[3])
 }
 
+const allBitsUsed = 131070 // Bit pattern 11111111111111110
+
 func main() {
 	validRows := make([]row, 0)
 
@@ -59,26 +60,6 @@ func main() {
 		}
 	}
 
-	prefix3Match := func(a, b, c byte) bool {
-		startIdx := sort.Search(len(validRows), func(i int) bool {
-			values := validRows[i].values
-			return a < values[0] ||
-				(a == values[0] &&
-					(b < values[1] || (b == values[1] && c <= values[2])))
-		})
-
-		if startIdx == len(validRows) {
-			return false
-		}
-
-		r := validRows[startIdx]
-		return r.values[0] == a && r.values[1] == b && r.values[2] == c
-	}
-
-	fmt.Println(prefix3Match(1, 7, 12))
-	fmt.Println(prefix3Match(1, 7, 13))
-	fmt.Println(prefix3Match(1, 7, 14))
-
 	// for _, r := range validRows {
 	// 	fmt.Println(r)
 	// }
@@ -88,7 +69,7 @@ func main() {
 
 	var validSquares []square
 
-	var l1, l2, l3, l4 int64
+	var l1, l2, l3 int64
 
 	for _, r1 := range validRows {
 		l1++
@@ -102,29 +83,44 @@ func main() {
 			usedBits := usedBits | r2.bits
 			for _, r3 := range validRows {
 				l3++
-				if r3.bits&usedBits != 0 ||
-					!prefix3Match(r1.values[0], r2.values[0], r3.values[0]) ||
-					!prefix3Match(r1.values[1], r2.values[1], r3.values[1]) ||
-					!prefix3Match(r1.values[2], r2.values[2], r3.values[2]) ||
-					!prefix3Match(r1.values[3], r2.values[3], r3.values[3]) ||
-					!prefix3Match(r1.values[0], r2.values[1], r3.values[2]) ||
-					!prefix3Match(r1.values[3], r2.values[2], r3.values[1]) {
+				if r3.bits&usedBits != 0 {
 					continue
 				}
 
 				usedBits := usedBits | r3.bits
-				for _, r4 := range validRows {
-					l4++
-					if r4.bits&usedBits == 0 &&
-						r1.values[0]+r2.values[0]+r3.values[0]+r4.values[0] == 34 &&
-						r1.values[1]+r2.values[1]+r3.values[1]+r4.values[1] == 34 &&
-						r1.values[2]+r2.values[2]+r3.values[2]+r4.values[2] == 34 &&
-						r1.values[3]+r2.values[3]+r3.values[3]+r4.values[3] == 34 &&
-						r1.values[0]+r2.values[1]+r3.values[2]+r4.values[3] == 34 &&
-						r1.values[3]+r2.values[2]+r3.values[1]+r4.values[0] == 34 {
-						validSquares = append(validSquares, square{r1, r2, r3, r4})
-						fmt.Printf("%v\n\n", square{r1, r2, r3, r4})
-					}
+
+				// Compute final row, and ensure that all values are between 1 and 16
+				x := 34 - r1.values[0] - r2.values[0] - r3.values[0]
+				if x < 1 || 16 < x {
+					continue
+				}
+				y := 34 - r1.values[1] - r2.values[1] - r3.values[1]
+				if y < 1 || 16 < y {
+					continue
+				}
+				z := 34 - r1.values[2] - r2.values[2] - r3.values[2]
+				if z < 1 || 16 < z {
+					continue
+				}
+				w := 34 - r1.values[3] - r2.values[3] - r3.values[3]
+				if w < 1 || 16 < w {
+					continue
+				}
+
+				r4 := newRow(x, y, z, w)
+
+				if r4.bits|usedBits == allBitsUsed && // check that all bits are used -- this will find collisions in last calculated row with itself as well as any of the other rows
+					// rows 1, 2, and 3 are guaranteed to == 34 because we pulled them from the list
+					// of known good rows
+					r4.values[0]+r4.values[1]+r4.values[2]+r4.values[3] == 34 && // row 4 was computed so must check
+					r1.values[0]+r2.values[0]+r3.values[0]+r4.values[0] == 34 && // column 1
+					r1.values[1]+r2.values[1]+r3.values[1]+r4.values[1] == 34 && // column 2
+					r1.values[2]+r2.values[2]+r3.values[2]+r4.values[2] == 34 && // column 3
+					r1.values[3]+r2.values[3]+r3.values[3]+r4.values[3] == 34 && // column 4
+					r1.values[0]+r2.values[1]+r3.values[2]+r4.values[3] == 34 && // diagonal 1
+					r1.values[3]+r2.values[2]+r3.values[1]+r4.values[0] == 34 { // diagonal 2
+					validSquares = append(validSquares, square{r1, r2, r3, r4})
+					// fmt.Printf("%v\n\n", square{r1, r2, r3, r4})
 				}
 			}
 		}
@@ -133,16 +129,14 @@ func main() {
 	fmt.Println("l1:", l1)
 	fmt.Println("l2:", l2)
 	fmt.Println("l3:", l3)
-	fmt.Println("l4:", l4)
 	fmt.Println("Magic squares:", len(validSquares))
 }
 
 // l1: 2064
 // l2: 4260096
 // l3: 2556057600
-// l4: 12021660672
 // Magic squares: 7040
 
-// real	1m13.189s
-// user	1m12.990s
-// sys	0m0.191s
+// real	0m11.939s
+// user	0m12.009s
+// sys	0m0.021s
