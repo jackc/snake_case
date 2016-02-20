@@ -106,3 +106,13 @@ func main() {
 	fmt.Println("l4:", l4)
 	fmt.Println("Magic squares:", len(validSquares))
 }
+
+// l1: 2064
+// l2: 4260096
+// l3: 2556057600
+// l4: 268435980288
+// Magic squares: 7040
+
+// real	15m29.509s
+// user	15m29.850s
+// sys	0m0.370s
