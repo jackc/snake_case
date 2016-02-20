@@ -7,6 +7,7 @@ package main
 
 import (
 	"fmt"
+	"sort"
 )
 
 type row struct {
@@ -58,7 +59,30 @@ func main() {
 		}
 	}
 
-	// fmt.Println(validRows)
+	prefix3Match := func(a, b, c byte) bool {
+		startIdx := sort.Search(len(validRows), func(i int) bool {
+			values := validRows[i].values
+			return a < values[0] ||
+				(a == values[0] &&
+					(b < values[1] || (b == values[1] && c <= values[2])))
+		})
+
+		if startIdx == len(validRows) {
+			return false
+		}
+
+		r := validRows[startIdx]
+		return r.values[0] == a && r.values[1] == b && r.values[2] == c
+	}
+
+	fmt.Println(prefix3Match(1, 7, 12))
+	fmt.Println(prefix3Match(1, 7, 13))
+	fmt.Println(prefix3Match(1, 7, 14))
+
+	// for _, r := range validRows {
+	// 	fmt.Println(r)
+	// }
+	// return
 
 	// fmt.Println(len(validRows))
 
@@ -78,7 +102,13 @@ func main() {
 			usedBits := usedBits | r2.bits
 			for _, r3 := range validRows {
 				l3++
-				if r3.bits&usedBits != 0 {
+				if r3.bits&usedBits != 0 ||
+					!prefix3Match(r1.values[0], r2.values[0], r3.values[0]) ||
+					!prefix3Match(r1.values[1], r2.values[1], r3.values[1]) ||
+					!prefix3Match(r1.values[2], r2.values[2], r3.values[2]) ||
+					!prefix3Match(r1.values[3], r2.values[3], r3.values[3]) ||
+					!prefix3Match(r1.values[0], r2.values[1], r3.values[2]) ||
+					!prefix3Match(r1.values[3], r2.values[2], r3.values[1]) {
 					continue
 				}
 
@@ -110,9 +140,9 @@ func main() {
 // l1: 2064
 // l2: 4260096
 // l3: 2556057600
-// l4: 268435980288
+// l4: 12021660672
 // Magic squares: 7040
 
-// real	15m29.509s
-// user	15m29.850s
-// sys	0m0.370s
+// real	1m13.189s
+// user	1m12.990s
+// sys	0m0.191s
