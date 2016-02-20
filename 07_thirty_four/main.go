@@ -162,10 +162,7 @@ func main() {
 						// rows 0, 1, and 2 are guaranteed to == 34 because we pulled them from the list
 						// of known good rows
 						r3.values[0]+r3.values[1]+r3.values[2]+r3.values[3] == 34 && // row 4 was computed so must check
-						r0.values[0]+r1.values[0]+r2.values[0]+r3.values[0] == 34 && // column 1
-						r0.values[1]+r1.values[1]+r2.values[1]+r3.values[1] == 34 && // column 2
-						r0.values[2]+r1.values[2]+r2.values[2]+r3.values[2] == 34 && // column 3
-						r0.values[3]+r1.values[3]+r2.values[3]+r3.values[3] == 34 && // column 4
+						// All columns are correct because it was computed
 						r0.values[0]+r1.values[1]+r2.values[2]+r3.values[3] == 34 && // diagonal 1
 						r0.values[3]+r1.values[2]+r2.values[1]+r3.values[0] == 34 { // diagonal 2
 						validSquares = append(validSquares, square{r0, r1, r2, r3})
