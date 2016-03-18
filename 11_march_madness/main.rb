@@ -1,12 +1,5 @@
 def game_count_by_team_count(team_count)
-  if team_count > 2
-    game_count = team_count / 2
-    game_count + game_count_by_team_count(game_count)
-  elsif team_count == 2
-    1
-  else
-    raise "Invalid team_count"
-  end
+  team_count - 1
 end
 
 game_count = game_count_by_team_count 64

@@ -18,12 +18,5 @@ func main() {
 }
 
 func gameCountByTeamCount(teamCount int) int {
-	if teamCount > 2 {
-		gameCount := teamCount / 2
-		return gameCount + gameCountByTeamCount(gameCount)
-	} else if teamCount == 2 {
-		return 1
-	} else {
-		panic("Invalid teamCount")
-	}
+	return teamCount - 1
 }
