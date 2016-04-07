@@ -5,7 +5,7 @@ int main() {
   for(int i = 0; i < (1<<20); i++) {
     int bitCount = __builtin_popcount(i);
     if(bitCount == 10) {
-      paths += bitCount;
+      paths++;
     }
   }
 
