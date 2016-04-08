@@ -37,7 +37,7 @@ time ./snake_case
 C assembly output
 
 ```
-cc -S -mllvm --x86-asm-syntax=intel main.c
+cc -S -mllvm --x86-asm-syntax=intel main.c && mv main.s main-no-popcnt.s
 ```
 
 C with popcnt instruction
