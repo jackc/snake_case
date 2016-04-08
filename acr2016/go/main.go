@@ -6,11 +6,13 @@ import (
 	"github.com/cznic/mathutil"
 )
 
+const squareSize = 10
+
 func main() {
-	var paths int
-	for i := uint32(0); i < uint32(1<<20); i++ {
-		bitCount := mathutil.PopCountUint32(i)
-		if bitCount == 10 {
+	var paths int64
+	for i := uint64(0); i < uint64(1<<(squareSize*2)); i++ {
+		bitCount := mathutil.PopCountUint64(i)
+		if bitCount == squareSize {
 			paths++
 		}
 	}
