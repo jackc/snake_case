@@ -106,14 +106,17 @@ func (solver *Solver) doneWatcher() {
 }
 
 func (solver *Solver) solve(bs *boardState) {
-	for x := int8(0); x < solver.boardWidth; x++ {
-		for y := int8(0); y < solver.boardHeight; y++ {
+	lastQueen := bs.queens[len(bs.queens)-1]
+	startY := lastQueen.Y
+	startX := lastQueen.X+1
+	for y := startY; y < solver.boardHeight; y++ {
+		for x := startX; x < solver.boardWidth; x++ {
 			queen := Queen{X: x, Y: y}
 			if !bs.validQueen(solver, queen) {
 				continue
 			}
 
-			bs = bs.deepCopy()
+			bs := bs.deepCopy()
 			bs.addQueen(solver, Queen{X: x, Y: y})
 
 			if len(bs.queens) == int(solver.queenCount) {
@@ -123,6 +126,7 @@ func (solver *Solver) solve(bs *boardState) {
 
 			solver.solve(bs)
 		}
+		startX = 0
 	}
 }
 
