@@ -67,14 +67,15 @@ func New(boardWidth, boardHeight, queenCount int8) *Solver {
 	solver := &Solver{
 		solChan:     make(chan []Queen),
 		doneChan:    make(chan struct{}),
-		workerCount: int(boardWidth) * int(boardHeight),
 		boardWidth:  boardWidth,
 		boardHeight: boardHeight,
 		queenCount:  queenCount,
 	}
 
-	for x := int8(0); x < solver.boardWidth; x++ {
-		for y := int8(0); y < solver.boardHeight; y++ {
+	// Since n queens use at least n rows, don't try searches that leave too may
+	// rows empty such that a solution is impossible.
+	for y := int8(0); y < (solver.boardHeight - solver.queenCount + 1); y++ {
+		for x := int8(0); x < solver.boardWidth; x++ {
 			bs := &boardState{
 				queens:   make([]Queen, 0, solver.queenCount),
 				xUsed:    make([]bool, solver.boardWidth),
@@ -85,6 +86,7 @@ func New(boardWidth, boardHeight, queenCount int8) *Solver {
 
 			bs.addQueen(solver, Queen{X: x, Y: y})
 
+			solver.workerCount++
 			go func(bs *boardState) {
 				solver.solve(bs)
 				solver.doneChan <- struct{}{}
