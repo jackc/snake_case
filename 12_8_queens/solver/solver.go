@@ -15,20 +15,43 @@ type Solver struct {
 }
 
 type boardState struct {
-	queens []Queen
-	xUsed  []bool
-	yUsed  []bool
-	dPosUsed  []bool
-	dNegUsed  []bool
+	queens   []Queen
+	xUsed    []bool
+	yUsed    []bool
+	dPosUsed []bool
+	dNegUsed []bool
+}
+
+func (bs *boardState) validQueen(solver *Solver, queen Queen) bool {
+	x := queen.X
+	y := queen.Y
+
+	dPos := y + x
+	dNeg := solver.boardWidth + y - x
+	return !(bs.xUsed[x] || bs.yUsed[y] || bs.dPosUsed[dPos] || bs.dNegUsed[dNeg])
+}
+
+func (bs *boardState) addQueen(solver *Solver, queen Queen) {
+	x := queen.X
+	y := queen.Y
+
+	dPos := y + x
+	dNeg := solver.boardWidth + y - x
+
+	bs.queens = append(bs.queens, queen)
+	bs.xUsed[x] = true
+	bs.yUsed[y] = true
+	bs.dPosUsed[dPos] = true
+	bs.dNegUsed[dNeg] = true
 }
 
 func (bs *boardState) deepCopy() *boardState {
 	newBS := &boardState{
-		queens: make([]Queen, len(bs.queens), cap(bs.queens)),
-		xUsed:  make([]bool, len(bs.xUsed)),
-		yUsed:  make([]bool, len(bs.yUsed)),
-		dPosUsed:  make([]bool, len(bs.dPosUsed)),
-		dNegUsed:  make([]bool, len(bs.dNegUsed)),
+		queens:   make([]Queen, len(bs.queens), cap(bs.queens)),
+		xUsed:    make([]bool, len(bs.xUsed)),
+		yUsed:    make([]bool, len(bs.yUsed)),
+		dPosUsed: make([]bool, len(bs.dPosUsed)),
+		dNegUsed: make([]bool, len(bs.dNegUsed)),
 	}
 
 	copy(newBS.queens, bs.queens)
@@ -53,20 +76,14 @@ func New(boardWidth, boardHeight, queenCount int8) *Solver {
 	for x := int8(0); x < solver.boardWidth; x++ {
 		for y := int8(0); y < solver.boardHeight; y++ {
 			bs := &boardState{
-				queens: make([]Queen, 0, solver.queenCount),
-				xUsed:  make([]bool, solver.boardWidth),
-				yUsed:  make([]bool, solver.boardHeight),
-				dPosUsed:  make([]bool, solver.boardHeight+solver.boardWidth),
-				dNegUsed:  make([]bool, solver.boardHeight+solver.boardWidth),
+				queens:   make([]Queen, 0, solver.queenCount),
+				xUsed:    make([]bool, solver.boardWidth),
+				yUsed:    make([]bool, solver.boardHeight),
+				dPosUsed: make([]bool, solver.boardHeight+solver.boardWidth),
+				dNegUsed: make([]bool, solver.boardHeight+solver.boardWidth),
 			}
 
-			dPos := y + x
-			dNeg := solver.boardWidth + y - x
-			bs.queens = append(bs.queens, Queen{X: x, Y: y})
-			bs.xUsed[x] = true
-			bs.yUsed[y] = true
-			bs.dPosUsed[dPos] = true
-			bs.dNegUsed[dNeg] = true
+			bs.addQueen(solver, Queen{X: x, Y: y})
 
 			go func(bs *boardState) {
 				solver.solve(bs)
@@ -91,19 +108,13 @@ func (solver *Solver) doneWatcher() {
 func (solver *Solver) solve(bs *boardState) {
 	for x := int8(0); x < solver.boardWidth; x++ {
 		for y := int8(0); y < solver.boardHeight; y++ {
-			dPos := y + x
-			dNeg := solver.boardWidth + y - x
-			if bs.xUsed[x] || bs.yUsed[y] || bs.dPosUsed[dPos] || bs.dNegUsed[dNeg] {
+			queen := Queen{X: x, Y: y}
+			if !bs.validQueen(solver, queen) {
 				continue
 			}
 
 			bs = bs.deepCopy()
-
-			bs.queens = append(bs.queens, Queen{X: x, Y: y})
-			bs.xUsed[x] = true
-			bs.yUsed[y] = true
-			bs.dPosUsed[dPos] = true
-			bs.dNegUsed[dNeg] = true
+			bs.addQueen(solver, Queen{X: x, Y: y})
 
 			if len(bs.queens) == int(solver.queenCount) {
 				solver.solChan <- bs.queens
