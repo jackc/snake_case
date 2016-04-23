@@ -2,20 +2,34 @@ package main
 
 import (
 	"bytes"
+	"flag"
 	"fmt"
+	"os"
 
 	"github.com/jackc/snake_case/12_8_queens/solver"
 )
 
-const BoardWidth = 8
-const BoardHeight = 8
-const QueenCount = 8
+var options struct {
+	boardWidth  int
+	boardHeight int
+	queenCount  int
+}
 
 func main() {
-	solver := solver.New(BoardWidth, BoardHeight, QueenCount)
+	flag.Usage = func() {
+		fmt.Fprintf(os.Stderr, "usage:  %s [options]\n", os.Args[0])
+		flag.PrintDefaults()
+	}
+
+	flag.IntVar(&options.boardWidth, "width", 8, "board width")
+	flag.IntVar(&options.boardHeight, "height", 8, "board height")
+	flag.IntVar(&options.queenCount, "queens", 8, "number of queens to place")
+	flag.Parse()
+
+	solver := solver.New(int8(options.boardWidth), int8(options.boardHeight), int8(options.queenCount))
 
 	solCount := 0
-	rb := newRasterizedBoard(BoardWidth, BoardHeight)
+	rb := newRasterizedBoard(int8(options.boardWidth), int8(options.boardHeight))
 
 	for queens := range solver.SolChan() {
 		solCount++
@@ -66,8 +80,8 @@ func (rb *rasterizedBoard) coordToIdx(x, y int8) int {
 func rasterizedBoardToString(rb *rasterizedBoard, queen, empty rune) string {
 	var buf bytes.Buffer
 
-	for y := 0; y < BoardHeight; y++ {
-		for x := 0; x < BoardWidth; x++ {
+	for y := int8(0); y < rb.width; y++ {
+		for x := int8(0); x < rb.height; x++ {
 			if rb.get(int8(x), int8(y)) {
 				buf.WriteRune(queen)
 			} else {
