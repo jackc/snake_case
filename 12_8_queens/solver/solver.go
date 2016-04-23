@@ -4,6 +4,16 @@ const MaxQueens = 16
 const MaxBoardWidth = 16
 const MaxBoardHeight = 16
 
+type bit32 uint32
+
+func (bits bit32) get(n uint8) bool {
+	return ((bits >> n) & 1) == 1
+}
+
+func (bits bit32) set(n uint8) bit32 {
+	return bits | (1 << n)
+}
+
 type Queen struct {
 	X int8
 	Y int8
@@ -20,10 +30,10 @@ type Solver struct {
 
 type boardState struct {
 	queens       [MaxQueens]Queen
-	xUsed        [MaxBoardWidth]bool
-	yUsed        [MaxBoardHeight]bool
-	dPosUsed     [MaxBoardHeight + MaxBoardWidth]bool
-	dNegUsed     [MaxBoardHeight + MaxBoardWidth]bool
+	xUsed        bit32
+	yUsed        bit32
+	dPosUsed     bit32
+	dNegUsed     bit32
 	queensPlaced int
 }
 
@@ -33,7 +43,7 @@ func (bs *boardState) validQueen(solver *Solver, queen Queen) bool {
 
 	dPos := y + x
 	dNeg := solver.boardWidth + y - x
-	return !(bs.xUsed[x] || bs.yUsed[y] || bs.dPosUsed[dPos] || bs.dNegUsed[dNeg])
+	return !(bs.xUsed.get(uint8(x)) || bs.yUsed.get(uint8(y)) || bs.dPosUsed.get(uint8(dPos)) || bs.dNegUsed.get(uint8(dNeg)))
 }
 
 func (bs *boardState) addQueen(solver *Solver, queen Queen) {
@@ -45,10 +55,10 @@ func (bs *boardState) addQueen(solver *Solver, queen Queen) {
 
 	bs.queens[bs.queensPlaced] = queen
 	bs.queensPlaced++
-	bs.xUsed[x] = true
-	bs.yUsed[y] = true
-	bs.dPosUsed[dPos] = true
-	bs.dNegUsed[dNeg] = true
+	bs.xUsed = bs.xUsed.set(uint8(x))
+	bs.yUsed = bs.yUsed.set(uint8(y))
+	bs.dPosUsed = bs.dPosUsed.set(uint8(dPos))
+	bs.dNegUsed = bs.dNegUsed.set(uint8(dNeg))
 }
 
 func (bs *boardState) deepCopy() *boardState {
