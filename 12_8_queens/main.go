@@ -59,7 +59,7 @@ func newRasterizedBoard(width, height int8) *rasterizedBoard {
 	return &rasterizedBoard{
 		width:   width,
 		height:  height,
-		squares: make([]bool, width*height),
+		squares: make([]bool, int(width)*int(height)),
 	}
 }
 
