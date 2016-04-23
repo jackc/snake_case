@@ -1,6 +1,7 @@
 package main
 
 import (
+	"bytes"
 	"fmt"
 
 	"github.com/jackc/snake_case/12_8_queens/solver"
@@ -24,18 +25,7 @@ func main() {
 			rb.set(q.X, q.Y)
 		}
 
-		for y := 0; y < BoardHeight; y++ {
-			for x := 0; x < BoardWidth; x++ {
-				if rb.get(int8(x), int8(y)) {
-					fmt.Print("♛")
-				} else {
-					fmt.Print("  ")
-				}
-			}
-			fmt.Println()
-		}
-
-		fmt.Println("\n----\n")
+		fmt.Println(rasterizedBoardToString(rb, 'Q', '-'))
 	}
 
 	fmt.Println("Solutions:", solCount)
@@ -71,4 +61,21 @@ func (rb *rasterizedBoard) get(x, y int8) bool {
 
 func (rb *rasterizedBoard) coordToIdx(x, y int8) int {
 	return int(y)*int(rb.width) + int(x)
+}
+
+func rasterizedBoardToString(rb *rasterizedBoard, queen, empty rune) string {
+	var buf bytes.Buffer
+
+	for y := 0; y < BoardHeight; y++ {
+		for x := 0; x < BoardWidth; x++ {
+			if rb.get(int8(x), int8(y)) {
+				buf.WriteRune(queen)
+			} else {
+				buf.WriteRune(empty)
+			}
+		}
+		buf.WriteRune('\n')
+	}
+
+	return buf.String()
 }
