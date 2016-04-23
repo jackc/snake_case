@@ -28,6 +28,19 @@ func main() {
 	flag.BoolVar(&options.draw, "draw", true, "draw board solutions")
 	flag.Parse()
 
+	if options.boardWidth < 1 || solver.MaxBoardWidth < options.boardWidth {
+		fmt.Fprintf(os.Stderr, "width must be between 1 and %d", solver.MaxBoardWidth)
+		os.Exit(1)
+	}
+	if options.boardHeight < 1 || solver.MaxBoardHeight < options.boardHeight {
+		fmt.Fprintf(os.Stderr, "height must be between 1 and %d", solver.MaxBoardHeight)
+		os.Exit(1)
+	}
+	if options.queenCount < 1 || solver.MaxQueens < options.queenCount {
+		fmt.Fprintf(os.Stderr, "queens must be between 1 and %d", solver.MaxQueens)
+		os.Exit(1)
+	}
+
 	solver := solver.New(int8(options.boardWidth), int8(options.boardHeight), int8(options.queenCount))
 
 	solCount := 0
