@@ -108,7 +108,7 @@ func (solver *Solver) doneWatcher() {
 func (solver *Solver) solve(bs *boardState) {
 	lastQueen := bs.queens[len(bs.queens)-1]
 	startY := lastQueen.Y
-	startX := lastQueen.X+1
+	startX := lastQueen.X + 1
 	for y := startY; y < solver.boardHeight; y++ {
 		for x := startX; x < solver.boardWidth; x++ {
 			queen := Queen{X: x, Y: y}

@@ -13,6 +13,7 @@ var options struct {
 	boardWidth  int
 	boardHeight int
 	queenCount  int
+	draw        bool
 }
 
 func main() {
@@ -24,6 +25,7 @@ func main() {
 	flag.IntVar(&options.boardWidth, "width", 8, "board width")
 	flag.IntVar(&options.boardHeight, "height", 8, "board height")
 	flag.IntVar(&options.queenCount, "queens", 8, "number of queens to place")
+	flag.BoolVar(&options.draw, "draw", true, "draw board solutions")
 	flag.Parse()
 
 	solver := solver.New(int8(options.boardWidth), int8(options.boardHeight), int8(options.queenCount))
@@ -34,12 +36,14 @@ func main() {
 	for queens := range solver.SolChan() {
 		solCount++
 
-		rb.clear()
-		for _, q := range queens {
-			rb.set(q.X, q.Y)
-		}
+		if options.draw {
+			rb.clear()
+			for _, q := range queens {
+				rb.set(q.X, q.Y)
+			}
 
-		fmt.Println(rasterizedBoardToString(rb, 'Q', '-'))
+			fmt.Println(rasterizedBoardToString(rb, 'Q', '-'))
+		}
 	}
 
 	fmt.Println("Solutions:", solCount)
