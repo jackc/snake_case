@@ -2,58 +2,73 @@ package main
 
 import (
 	"fmt"
+
+	"github.com/jackc/snake_case/12_8_queens/solver"
 )
 
 const BoardWidth = 8
 const BoardHeight = 8
 const QueenCount = 8
 
-type Queen struct {
-	X int8
-	Y int8
-}
-
-type BoardState struct {
-	Queens []Queen
-	XUsed  []bool
-	YUsed  []bool
-}
-
-func Solve(width, height, queenCount int8) chan []Queen {
-	solChan := make(chan []Queen)
-
-	emptyState := BoardState{
-		Queens: make([]Queen, 0, queenCount),
-		XUsed:  make([]bool, width),
-		YUsed:  make([]bool, width),
-	}
-
-	return solChan
-}
-
-func NewBoardState(width, height, queenCount int8) *BoardState {
-	return &BoardState{
-		Queens: make([]Queen, 0, queenCount),
-		XUsed:  make([]bool, width),
-		YUsed:  make([]bool, width),
-	}
-}
-
 func main() {
-	bs := NewBoardState(BoardWidth, BoardHeight, QueenCount)
+	solver := solver.New(BoardWidth, BoardHeight, QueenCount)
 
-	for x := 0; x < BoardWidth; x++ {
-		for y := 0; y < BoardHeight; y++ {
+	solCount := 0
+	rb := newRasterizedBoard(BoardWidth, BoardHeight)
 
+	for queens := range solver.SolChan() {
+		solCount++
+
+		rb.clear()
+		for _, q := range queens {
+			rb.set(q.X, q.Y)
 		}
-	}
-	gameCount := gameCountByTeamCount(64)
-	fmt.Println("Games:", gameCount)
-	combinations := big.NewInt(1)
-	big2 := big.NewInt(2)
-	for i := 0; i < gameCount; i++ {
-		combinations.Mul(combinations, big2)
+
+		for y := 0; y < BoardHeight; y++ {
+			for x := 0; x < BoardWidth; x++ {
+				if rb.get(int8(x), int8(y)) {
+					fmt.Print("♛")
+				} else {
+					fmt.Print("  ")
+				}
+			}
+			fmt.Println()
+		}
+
+		fmt.Println("\n----\n")
 	}
 
-	fmt.Println("Combinations:", combinations)
+	fmt.Println("Solutions:", solCount)
+}
+
+type rasterizedBoard struct {
+	squares []bool
+	width   int8
+	height  int8
+}
+
+func newRasterizedBoard(width, height int8) *rasterizedBoard {
+	return &rasterizedBoard{
+		width:   width,
+		height:  height,
+		squares: make([]bool, width*height),
+	}
+}
+
+func (rb *rasterizedBoard) clear() {
+	for i := range rb.squares {
+		rb.squares[i] = false
+	}
+}
+
+func (rb *rasterizedBoard) set(x, y int8) {
+	rb.squares[rb.coordToIdx(x, y)] = true
+}
+
+func (rb *rasterizedBoard) get(x, y int8) bool {
+	return rb.squares[rb.coordToIdx(x, y)]
+}
+
+func (rb *rasterizedBoard) coordToIdx(x, y int8) int {
+	return int(y)*int(rb.width) + int(x)
 }
