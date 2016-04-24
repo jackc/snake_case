@@ -61,3 +61,17 @@ BenchmarkSolve8-8        500     3619480 ns/op   4874855 B/op    76174 allocs/op
 BenchmarkSolve10-8        10   180722660 ns/op  320672425 B/op   5010949 allocs/op
 ok    github.com/jackc/snake_case/12_8_queens/solver  4.166s
 ```
+
+
+ommit 4108fb1cdb9811787a9783fa2ca2f165d86a0fe1
+Author: Jack Christensen <jack@jackchristensen.com>
+Date:   Sun Apr 24 09:37:53 2016 -0500
+
+    Avoid more mallocs
+
+jack@edi:~/dev/go/src/github.com/jackc/snake_case/12_8_queens/solver$ go test -bench=. -benchmem
+testing: warning: no tests to run
+PASS
+BenchmarkSolve8-8        500     2468651 ns/op      2293 B/op      103 allocs/op
+BenchmarkSolve10-8        10   118572647 ns/op     24051 B/op      737 allocs/op
+ok    github.com/jackc/snake_case/12_8_queens/solver  2.788s
