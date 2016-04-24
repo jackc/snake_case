@@ -24,9 +24,7 @@ type Queen struct {
 }
 
 type Solver struct {
-	solChan     chan []Queen
-	doneChan    chan struct{}
-	workerCount int
+	solutions   [][]Queen
 	boardWidth  int8
 	boardHeight int8
 	queenCount  int8
@@ -82,8 +80,7 @@ func (bs *boardState) popQueen(solver *Solver) {
 
 func New(boardWidth, boardHeight, queenCount int8) *Solver {
 	solver := &Solver{
-		solChan:     make(chan []Queen),
-		doneChan:    make(chan struct{}),
+		solutions:     make([][]Queen, 0),
 		boardWidth:  boardWidth,
 		boardHeight: boardHeight,
 		queenCount:  queenCount,
@@ -97,25 +94,11 @@ func New(boardWidth, boardHeight, queenCount int8) *Solver {
 
 			bs.pushQueen(solver, Queen{X: x, Y: y})
 
-			solver.workerCount++
-			go func(bs *boardState) {
 				solver.solve(bs)
-				solver.doneChan <- struct{}{}
-			}(bs)
 		}
 	}
 
-	go solver.doneWatcher()
-
 	return solver
-}
-
-func (solver *Solver) doneWatcher() {
-	for i := 0; i < solver.workerCount; i++ {
-		<-solver.doneChan
-	}
-
-	close(solver.solChan)
 }
 
 func (solver *Solver) solve(bs *boardState) {
@@ -134,7 +117,7 @@ func (solver *Solver) solve(bs *boardState) {
 			if bs.queensPlaced == int(solver.queenCount) {
 				sol := make([]Queen, 0, bs.queensPlaced)
 				sol = append(sol, bs.queens[:bs.queensPlaced]...)
-				solver.solChan <- sol
+				solver.solutions = append(solver.solutions, sol)
 				bs.popQueen(solver)
 				continue
 			}
@@ -147,6 +130,6 @@ func (solver *Solver) solve(bs *boardState) {
 	}
 }
 
-func (solver *Solver) SolChan() <-chan []Queen {
-	return solver.solChan
+func (solver *Solver) Solutions() [][]Queen {
+	return solver.solutions
 }
