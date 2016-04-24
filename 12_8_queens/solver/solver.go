@@ -14,6 +14,10 @@ func (bits bit32) set(n uint8) bit32 {
 	return bits | (1 << n)
 }
 
+func (bits bit32) unset(n uint8) bit32 {
+	return bits &^ (1 << n)
+}
+
 type Queen struct {
 	X int8
 	Y int8
@@ -46,7 +50,7 @@ func (bs *boardState) validQueen(solver *Solver, queen Queen) bool {
 	return !(bs.xUsed.get(uint8(x)) || bs.yUsed.get(uint8(y)) || bs.dPosUsed.get(uint8(dPos)) || bs.dNegUsed.get(uint8(dNeg)))
 }
 
-func (bs *boardState) addQueen(solver *Solver, queen Queen) {
+func (bs *boardState) pushQueen(solver *Solver, queen Queen) {
 	x := queen.X
 	y := queen.Y
 
@@ -61,9 +65,19 @@ func (bs *boardState) addQueen(solver *Solver, queen Queen) {
 	bs.dNegUsed = bs.dNegUsed.set(uint8(dNeg))
 }
 
-func (bs *boardState) deepCopy() *boardState {
-	newBS := *bs
-	return &newBS
+func (bs *boardState) popQueen(solver *Solver) {
+	queen := bs.queens[bs.queensPlaced-1]
+	bs.queensPlaced--
+	x := queen.X
+	y := queen.Y
+
+	dPos := y + x
+	dNeg := solver.boardWidth + y - x
+
+	bs.xUsed = bs.xUsed.unset(uint8(x))
+	bs.yUsed = bs.yUsed.unset(uint8(y))
+	bs.dPosUsed = bs.dPosUsed.unset(uint8(dPos))
+	bs.dNegUsed = bs.dNegUsed.unset(uint8(dNeg))
 }
 
 func New(boardWidth, boardHeight, queenCount int8) *Solver {
@@ -81,7 +95,7 @@ func New(boardWidth, boardHeight, queenCount int8) *Solver {
 		for x := int8(0); x < solver.boardWidth; x++ {
 			bs := &boardState{}
 
-			bs.addQueen(solver, Queen{X: x, Y: y})
+			bs.pushQueen(solver, Queen{X: x, Y: y})
 
 			solver.workerCount++
 			go func(bs *boardState) {
@@ -115,15 +129,19 @@ func (solver *Solver) solve(bs *boardState) {
 				continue
 			}
 
-			bs := bs.deepCopy()
-			bs.addQueen(solver, Queen{X: x, Y: y})
+			bs.pushQueen(solver, Queen{X: x, Y: y})
 
 			if bs.queensPlaced == int(solver.queenCount) {
-				solver.solChan <- bs.queens[:bs.queensPlaced]
+				sol := make([]Queen, 0, bs.queensPlaced)
+				sol = append(sol, bs.queens[:bs.queensPlaced]...)
+				solver.solChan <- sol
+				bs.popQueen(solver)
 				continue
 			}
 
 			solver.solve(bs)
+
+			bs.popQueen(solver)
 		}
 		startX = 0
 	}
